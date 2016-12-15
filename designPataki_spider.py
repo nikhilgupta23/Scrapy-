@@ -1,6 +1,10 @@
 import scrapy
 import csv
 import json
+import re
+
+def remove_non_ascii(text):
+    return ''.join([i if ord(i) < 128 else '' for i in text])
 
 class DesignPatakiSpider(scrapy.Spider):
     name = "design_pataki"
@@ -41,8 +45,9 @@ class DesignPatakiSpider(scrapy.Spider):
             yield request
 
     def closed(self, reason):
+        toWrite = {'data' : DesignPatakiSpider.jsonData}
         with open('data.json', 'w+') as outfile:    
-            json.dump(DesignPatakiSpider.jsonData, outfile)
+            json.dump(toWrite, outfile, ensure_ascii=False)
 
         
     def parseProduct(self, response):        
@@ -57,14 +62,24 @@ class DesignPatakiSpider(scrapy.Spider):
         productImage = response.meta['image_link']
         productPrice = str(response.css('span.regular-price span.price::text').extract_first()).replace('INR','').strip()
 
-        productCategory = productCategory.replace('"','``')
+        productCategory = productCategory.replace('"','``')        
+        productDesc = re.sub('\n' ,'|',productDesc)
+        productDesc = re.sub('\t','',productDesc)                             
+        productDesc = re.sub('\r','',productDesc)
+        productDesc = re.sub('[ ]+',' ',productDesc)
+        productDesc = re.sub('(\| )+','|',productDesc)
+        productDesc = re.sub('\|+','|',productDesc)
         productDesc = productDesc.replace('"','``')
         productName = productName.replace('"','``')
         productSku = 'SKU-NA'
         
         with open('designPataki.csv', 'a', newline='') as csvfile:
-            fieldnames = ['Name', 'Image', 'Description', 'Category', 'Price', 'Page', 'SKU']
+            fieldnames = ['Title', 'Category', 'URL', 'IMG_SRC', 'Merchant', 'Price', 'SKU', 'Description']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)            
-            writer.writerow({'Name': '"'+productName+'"', 'Image': '"'+productImage+'"', 'Description': '"'+productDesc+'"','Price': '"'+productPrice+'"', 'Page': '"'+productLink+'"', 'Category': '"'+productCategory+'"', 'SKU': '"'+productSku+'"'})
+            writer.writerow({'Title': '"'+productName+'"', 'IMG_SRC': '"'+productImage+'"', 'Description': '"'+productDesc+'"','Price': '"'+productPrice+'"', 'URL': '"'+productLink+'"', 'Category': '"'+productCategory+'"', 'SKU': '"'+productSku+'"', 'Merchant': '"NA"'})
 
-        DesignPatakiSpider.jsonData.append({'Name': productName, 'Image': productImage, 'Description': productDesc,'Price': productPrice, 'Page': productLink, 'Category': productCategory, 'SKU': productSku})        
+        productDesc = remove_non_ascii(productDesc)        
+        productCategory = remove_non_ascii(productCategory)                
+        productName = remove_non_ascii(productName)        
+        
+        DesignPatakiSpider.jsonData.append({'Title': productName, 'Description': productDesc, 'IMG_SRC': productImage, 'Price': productPrice, 'SKU': productSku, 'Category': productCategory, 'URL': productLink, 'Merchant': 'NA'})        
