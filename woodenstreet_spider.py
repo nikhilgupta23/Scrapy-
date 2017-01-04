@@ -103,7 +103,7 @@ class HCVID195_www_woodenstreet_com_Spider(scrapy.Spider):
 
         productPrice = ''
         if not response.css('p.coupon_our_price::text').extract_first():
-            productPrice = response.css('p.retprice span.price_container::text').extract_first().replace('Rs','').strip()
+            productPrice = response.css('p.retprice span#price_container::text').extract_first().replace('Rs','').strip()
         else:
             productPrice = response.css('p.coupon_our_price::text').extract_first().replace('Our Price Rs','').strip()
 
