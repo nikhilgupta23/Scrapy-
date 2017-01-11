@@ -42,7 +42,7 @@ class HCVID184_www_stylespafurniture_com_Spider(scrapy.Spider):
         yield request
         link = 'http://www.stylespafurniture.com/product-range/bedroom/'
         request = scrapy.Request(url=link, callback = self.parseCat)
-        request.meta['prod_category'] = 'Living'
+        request.meta['prod_category'] = 'Dining'
         yield request
 
     def parseCat(self, response):        
